@@ -1,5 +1,6 @@
 # Racunarska grafika projekat
-Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learnopengl.com/) specifikaciju.
+Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learnopengl.com/) specifikaciju.  
+Projekat napravio: Filip Jovanovic 336/2018
 
 ## Implementacija oblasti i ocenjivanje
 - Obavezne oblasti:
@@ -24,7 +25,7 @@ Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learn
 - Ako sadrzi obavezne oblasti + 2 oblasti iz grupe A + 1 oblast iz grupe B max broj poena koji je moguce osvojiti je 35
 - Ako sadrzi obavezne oblasti + 2 oblasti iz grupe A + 2 oblast iz grupe B max broj poena koji je moguce osvojiti je 40 (5 je bonus)
 
-## Napomene
+## Napomene za studente prilikom kreiranja projekta
 - Svo osvetljenje na sceni treba da se racuna po Blin-Fonogovom modelu [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
 - Dovoljno je da projekat ima jedan tip [Blendinga](https://learnopengl.com/Advanced-OpenGL/Blending)(Discard ili blend)
 - Na Github-u mora postojati istorija commit-ova da bi bio pregledan
