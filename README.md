@@ -1,11 +1,31 @@
-# project_base
-Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
+# Racunarska grafika projekat
+Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learnopengl.com/) specifikaciju.
 
-# Uputstvo
-1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
-2. CLion -> Open -> path/to/my/project_base
-3. Main se nalazi u src/main.cpp
-4. Cpp fajlovi idu u src folder
-5. Zaglavlja (h i hpp) fajlovi idu u include
-6. Šejderi idu u folder shaders. `Vertex shader` ima ekstenziju `.vs`, `fragment shader` ima ekstenziju `.fs`
-7. ALT+SHIFT+F10 -> project_base -> run
+## Implementacija oblasti i ocenjivanje
+- Obavezne oblasti:
+  - [ ] 1-8 nedelje
+  - [ ] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending)
+  - [ ] [Face culling](https://learnopengl.com/Advanced-OpenGL/Face-culling)
+  - [ ] [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
+- Oblasti grupe A:
+  - [ ] [Framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers)
+  - [ ] [Cubemaps](https://learnopengl.com/Advanced-OpenGL/Cubemaps)
+  - [ ] [Instancing](https://learnopengl.com/Advanced-OpenGL/Instancing)
+  - [ ] [Anti Aliasing](https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing)
+- Oblasti grupe B:
+  - [ ] [Point shadows](https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows)
+  - [ ] [Normal mapping](https://learnopengl.com/Advanced-Lighting/Normal-Mapping), [Parallax mapping](https://learnopengl.com/Advanced-Lighting/Parallax-Mapping)
+  - [ ] [HDR](https://learnopengl.com/Advanced-Lighting/HDR), [Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
+  - [ ] [Deffered Shading](https://learnopengl.com/Advanced-Lighting/Deferred-Shading)
+  - [ ] [SSAO](https://learnopengl.com/Advanced-Lighting/SSAO)
+
+- Ako sadrzi obavezne oblasti(1-8 nedelje, Blending, Face culling, Advanced lighting) max broj poena koji je moguce osvojiti je 15
+- Ako sadrzi obavezne oblasti + 2 oblasti iz grupe A max broj poena koji je moguce osvojiti je 25
+- Ako sadrzi obavezne oblasti + 2 oblasti iz grupe A + 1 oblast iz grupe B max broj poena koji je moguce osvojiti je 35
+- Ako sadrzi obavezne oblasti + 2 oblasti iz grupe A + 2 oblast iz grupe B max broj poena koji je moguce osvojiti je 40 (5 je bonus)
+
+## Napomene
+- Svo osvetljenje na sceni treba da se racuna po Blin-Fonogovom modelu [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
+- Dovoljno je da projekat ima jedan tip [Blendinga](https://learnopengl.com/Advanced-OpenGL/Blending)(Discard ili blend)
+- Na Github-u mora postojati istorija commit-ova da bi bio pregledan
+- U projektu nije dozvoljeno koriscenje .obj modela i tekstura iz glavnog [repozitorijuma](https://github.com/matf-racunarska-grafika/LearnOpenGL)
