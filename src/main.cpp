@@ -180,17 +180,14 @@ int main() {
 //    Model ourModel("resources/objects/backpack/backpack.obj");
 //    ourModel.SetShaderTextureNamePrefix("material.");
 
-//    Model ourModel("resources/objects/earth/Earth.obj");        // RADI
-//    ourModel.SetShaderTextureNamePrefix("material.");
-//    Model ourModel("resources/objects/rocket/Toy_Rocket.obj");    // RADI
-//    ourModel.SetShaderTextureNamePrefix("material.");
-//    Model ourModel("resources/objects/astronaut/Astronaut.obj");    // RADI
-//    ourModel.SetShaderTextureNamePrefix("material.");
-//    Model ourModel("resources/objects/mars/Mars_2K.obj");       // RADI
-//    ourModel.SetShaderTextureNamePrefix("material.");
-
-    Model ourModel("resources/objects/rocket/Toy_Rocket.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+    Model modelEarth("resources/objects/earth/Earth.obj");
+    modelEarth.SetShaderTextureNamePrefix("material.");
+    Model modelRocket("resources/objects/rocket/Toy_Rocket.obj");
+    modelRocket.SetShaderTextureNamePrefix("material.");
+    Model modelAstronaut("resources/objects/astronaut/Astronaut.obj");
+    modelAstronaut.SetShaderTextureNamePrefix("material.");
+    Model modelMars("resources/objects/mars/Mars_2K.obj");
+    modelMars.SetShaderTextureNamePrefix("material.");
 
 
 
@@ -269,15 +266,15 @@ int main() {
 
 
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
+    pointLight.position = glm::vec3(4.0f, 4.0, -10.0);    // Postavi na z=-10 da bude svetlije
     pointLight.ambient = glm::vec3(0.7, 0.7, 0.7);
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
-
+//    pointLight.quadratic = 0.032f;    // Slabljenje svetlosti (kako se udaljava od pozicije tako slabi)
+    pointLight.quadratic = 0.0f;
 
 
     // draw in wireframe
@@ -321,15 +318,48 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-//        model = glm::translate(model, glm::vec3(0.0f, 3.0f, -20.0f));
-//        model = glm::scale(model, glm::vec3(0.01f));
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        //------------------------------------ RENDEROVANJE MODELA  ------------------------------------
+        // modelEarth
+        glm::mat4 modelMatrixEarth = glm::mat4(1.0f);
+        modelMatrixEarth = glm::translate(modelMatrixEarth, glm::vec3(0.0f, -5.0f, -25.0f));
+        modelMatrixEarth = glm::scale(modelMatrixEarth, glm::vec3(4.5f));
+        // Rotiramo Zemlju tako da izgleda kao da raketa polece sa Floride
+        modelMatrixEarth = glm::rotate(modelMatrixEarth, glm::radians(170.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMatrixEarth = glm::rotate(modelMatrixEarth, glm::radians(-40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("model", modelMatrixEarth);
+        modelEarth.Draw(ourShader);
+
+        // modelRocket (Velicina svakako nije proporcionalna zemlji i marsu)
+        glm::mat4 modelMatrixRocket= glm::mat4(1.0f);
+        modelMatrixRocket = glm::translate(modelMatrixRocket, glm::vec3(8.0f, 1.9f, -20.0f));
+        modelMatrixRocket = glm::scale(modelMatrixRocket, glm::vec3(0.7f));
+        // Rotiramo raketu da izgleda kao da polece pod nekim uglom (vizuelno)
+        modelMatrixRocket = glm::rotate(modelMatrixRocket, glm::radians(-50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ourShader.setMat4("model", modelMatrixRocket);
+        modelRocket.Draw(ourShader);
+
+        // modelMars   (Zemlja je priblizno 2 puta veca od marsa (0.53*Zemlja = Mars))
+        glm::mat4 modelMatrixMars = glm::mat4(1.0f);
+        modelMatrixMars = glm::translate(modelMatrixMars, glm::vec3(35.0f, 8.0f, -15.0f));
+        modelMatrixMars = glm::scale(modelMatrixMars, glm::vec3(1.4f));
+        ourShader.setMat4("model", modelMatrixMars);
+        modelMars.Draw(ourShader);
+
+        // modelAstronaut (Velicina svakako nije proporcionalna zemlji i marsu)
+        glm::mat4 modelMatrixAstronaut = glm::mat4(1.0f);
+        modelMatrixAstronaut = glm::translate(modelMatrixAstronaut, glm::vec3(34.5f, 12.7f, -14.0f));
+        modelMatrixAstronaut = glm::scale(modelMatrixAstronaut, glm::vec3(0.15f));
+        modelMatrixAstronaut = glm::rotate(modelMatrixAstronaut, glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("model", modelMatrixAstronaut);
+        modelAstronaut.Draw(ourShader);
+
+        glm::mat4 modelMatrixAstronaut2 = glm::mat4(1.0f);
+        modelMatrixAstronaut2 = glm::translate(modelMatrixAstronaut2, glm::vec3(34.9f, 12.7f, -14.0f));
+        modelMatrixAstronaut2 = glm::scale(modelMatrixAstronaut2, glm::vec3(0.15f));
+        modelMatrixAstronaut2 = glm::rotate(modelMatrixAstronaut2, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("model", modelMatrixAstronaut2);
+        modelAstronaut.Draw(ourShader);
+        //------------------------------------ RENDEROVANJE MODELA  ------------------------------------
 
 
         //------------------------------------ SKYBOX ------------------------------------
@@ -338,13 +368,12 @@ int main() {
         view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix()));
         skyboxShader.setMat4("view", view);
         skyboxShader.setMat4("projection", projection);
-        // skybox cube
         glBindVertexArray(skyboxVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
-        glDepthFunc(GL_LESS); // set depth function back to default
+        glDepthFunc(GL_LESS);
         //------------------------------------ SKYBOX ------------------------------------
 
 
