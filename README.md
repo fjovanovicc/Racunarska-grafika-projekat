@@ -4,13 +4,13 @@ Projekat napravio: Filip Jovanovic 336/2018
 
 ## Implementacija oblasti i ocenjivanje
 - Obavezne oblasti:
-  - [ ] 1-8 nedelje
-  - [ ] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending)
+  - [x] 1-8 nedelje
+  - [x] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending) (Maketa rakete u kutiji - blend)
   - [ ] [Face culling](https://learnopengl.com/Advanced-OpenGL/Face-culling)
   - [ ] [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
 - Oblasti grupe A:
   - [ ] [Framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers)
-  - [ ] [Cubemaps](https://learnopengl.com/Advanced-OpenGL/Cubemaps)
+  - [x] [Cubemaps](https://learnopengl.com/Advanced-OpenGL/Cubemaps)
   - [ ] [Instancing](https://learnopengl.com/Advanced-OpenGL/Instancing)
   - [ ] [Anti Aliasing](https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing)
 - Oblasti grupe B:
