@@ -171,20 +171,22 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
     glEnable(GL_DEPTH_TEST);        // Objekti na sceni trebaju biti ispred skybox-a
+    glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);           // Odseci prednju stranu
+    glFrontFace(GL_CW);
 
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-    Shader shaderBlending("resources/shaders/blending.vs", "resources/shaders/blending.fs");
+    Shader blendingShader("resources/shaders/blending.vs", "resources/shaders/blending.fs");
+    Shader faceCullingShader("resources/shaders/face_culling.vs", "resources/shaders/face_culling.fs");
 
     // load models
     // -----------
-//    Model ourModel("resources/objects/backpack/backpack.obj");
-//    ourModel.SetShaderTextureNamePrefix("material.");
-
     Model modelEarth("resources/objects/earth/Earth.obj");
     modelEarth.SetShaderTextureNamePrefix("material.");
     Model modelRocket("resources/objects/rocket/Toy_Rocket.obj");
@@ -197,8 +199,7 @@ int main() {
     modelSun.SetShaderTextureNamePrefix(("material."));
 
 
-
-    //------------------------------------ SKYBOX ------------------------------------
+    // ------------------------------------ SKYBOX ------------------------------------
     // Skybox ("kutija" 1x1x1)
     float skyboxVertices[] = {
         // positions
@@ -268,9 +269,10 @@ int main() {
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
-    //------------------------------------ SKYBOX ------------------------------------
+    // ------------------------------------ SKYBOX ------------------------------------
 
 
+    // ------------------------------------ BLENDING ------------------------------------
     float outsideTransparentVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
             0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -292,7 +294,6 @@ int main() {
             0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
             -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
             -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
 
             -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
             0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
@@ -324,7 +325,7 @@ int main() {
     glGenBuffers(1, &outsideTransparentVerticesVBO);
     glBindVertexArray(outsideTransparentVerticesVAO);
     glBindBuffer(GL_ARRAY_BUFFER, outsideTransparentVerticesVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(outsideTransparentVertices), outsideTransparentVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(outsideTransparentVertices), &outsideTransparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
@@ -336,7 +337,7 @@ int main() {
     glGenBuffers(1, &transparentVBO);
     glBindVertexArray(transparentVAO);
     glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), &transparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
@@ -346,8 +347,75 @@ int main() {
     unsigned int outsideTransparentTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str());
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/window_60percent.png").c_str());
 
-    shaderBlending.use();
-    shaderBlending.setInt("texture1", 0);
+    blendingShader.use();
+    blendingShader.setInt("texture1", 0);
+    // ------------------------------------ BLENDING ------------------------------------
+
+
+    // ---------------------------------- FACE CULLING ----------------------------------
+    float faceCullingBoxVertices[] = {
+            // back face
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
+            // front face
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
+            // left face
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
+            // right face
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
+            // bottom face
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
+            // top face
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f  // top-left
+    };
+
+    // faceCullingBox setup
+    unsigned int faceCullingBoxVAO, faceCullingBoxVBO;
+    glGenVertexArrays(1, &faceCullingBoxVAO);
+    glGenBuffers(1, &faceCullingBoxVBO);
+    glBindVertexArray(faceCullingBoxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, faceCullingBoxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(faceCullingBoxVertices), &faceCullingBoxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+    unsigned int faceCullingTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str());
+
+    faceCullingShader.use();
+    faceCullingShader.setInt("texture1", 0);
+    // ---------------------------------- FACE CULLING ----------------------------------
 
 
     PointLight& pointLight = programState->pointLight;
@@ -384,24 +452,25 @@ int main() {
 
 
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
-        shaderBlending.use();
+        blendingShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
-        shaderBlending.setMat4("projection", projection);
-        shaderBlending.setMat4("view", view);
+        blendingShader.setMat4("projection", projection);
+        blendingShader.setMat4("view", view);
 
         // Netransparentne strane kocke
         glBindVertexArray(outsideTransparentVerticesVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, outsideTransparentTexture);
         model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -1.0f));
-        shaderBlending.setMat4("model", model);
+        blendingShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 30);      // Samo 5 strana kocke, 6 trouglova po strani, 6*5=30 trouglova
 
         // modelRocket (Velicina svakako nije proporcionalna zemlji i marsu)
         glm::mat4 modelMatrixRocketMini= glm::mat4(1.0f);
-        modelMatrixRocketMini = glm::translate(modelMatrixRocketMini, glm::vec3(-5.0f, -0.3f, -1.0f));
+//        modelMatrixRocketMini = glm::translate(modelMatrixRocketMini, glm::vec3(-5.0f, -0.3f, -1.0f));    // Staticki model
+        modelMatrixRocketMini = glm::translate(modelMatrixRocketMini, glm::vec3(-5.0f, -0.1f * cos(currentFrame) - 0.3f, -1.0f));
         modelMatrixRocketMini = glm::scale(modelMatrixRocketMini, glm::vec3(0.2f));
         ourShader.setMat4("model", modelMatrixRocketMini);
         modelRocket.Draw(ourShader);
@@ -412,9 +481,33 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -1.0f));
-        shaderBlending.setMat4("model", model);
+        blendingShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 6);   // Samo jedna strana kocke, tj. 6 trouglova
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
+
+
+        // ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);
+        glBindVertexArray(faceCullingBoxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, faceCullingTexture);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -5.0f));
+        faceCullingShader.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDisable(GL_CULL_FACE);    // Da ne bi uticalo na druge objekte na sceni
+
+        // modelAstronaut (Velicina svakako nije proporcionalna zemlji i marsu)
+        glm::mat4 modelMatrixAstronautMini= glm::mat4(1.0f);
+//        modelMatrixRocketMini = glm::translate(modelMatrixRocketMini, glm::vec3(-5.0f, -0.3f, -1.0f));    // Staticki model
+        modelMatrixAstronautMini = glm::translate(modelMatrixAstronautMini, glm::vec3(-5.0f, -0.1f * cos(currentFrame) - 0.3f, -5.0f));
+        modelMatrixAstronautMini = glm::rotate(modelMatrixAstronautMini, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrixAstronautMini = glm::scale(modelMatrixAstronautMini, glm::vec3(0.15f));
+        ourShader.setMat4("model", modelMatrixAstronautMini);
+        modelAstronaut.Draw(ourShader);
+        // ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
 
 
         // ourShader setup (koriscen za sve modele zemlje, marsa, atronauta i rakete)
@@ -438,19 +531,19 @@ int main() {
         // modelEarth
         glm::mat4 modelMatrixEarth = glm::mat4(1.0f);
         modelMatrixEarth = glm::translate(modelMatrixEarth, glm::vec3(0.0f, -5.0f, -25.0f));
-        modelMatrixEarth = glm::scale(modelMatrixEarth, glm::vec3(4.5f));
         // Rotiramo Zemlju tako da izgleda kao da raketa polece sa Floride
         modelMatrixEarth = glm::rotate(modelMatrixEarth, glm::radians(170.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         modelMatrixEarth = glm::rotate(modelMatrixEarth, glm::radians(-40.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrixEarth = glm::scale(modelMatrixEarth, glm::vec3(4.5f));
         ourShader.setMat4("model", modelMatrixEarth);
         modelEarth.Draw(ourShader);
 
         // modelRocket (Velicina svakako nije proporcionalna zemlji i marsu)
         glm::mat4 modelMatrixRocket= glm::mat4(1.0f);
         modelMatrixRocket = glm::translate(modelMatrixRocket, glm::vec3(8.0f, 1.9f, -20.0f));
-        modelMatrixRocket = glm::scale(modelMatrixRocket, glm::vec3(0.7f));
         // Rotiramo raketu da izgleda kao da polece pod nekim uglom (vizuelno)
         modelMatrixRocket = glm::rotate(modelMatrixRocket, glm::radians(-50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelMatrixRocket = glm::scale(modelMatrixRocket, glm::vec3(0.7f));
         ourShader.setMat4("model", modelMatrixRocket);
         modelRocket.Draw(ourShader);
 
@@ -464,19 +557,19 @@ int main() {
         // modelAstronaut (Velicina svakako nije proporcionalna zemlji i marsu)
         glm::mat4 modelMatrixAstronaut = glm::mat4(1.0f);
         modelMatrixAstronaut = glm::translate(modelMatrixAstronaut, glm::vec3(34.5f, 12.7f, -14.0f));
-        modelMatrixAstronaut = glm::scale(modelMatrixAstronaut, glm::vec3(0.15f));
         modelMatrixAstronaut = glm::rotate(modelMatrixAstronaut, glm::radians(30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrixAstronaut = glm::scale(modelMatrixAstronaut, glm::vec3(0.15f));
         ourShader.setMat4("model", modelMatrixAstronaut);
         modelAstronaut.Draw(ourShader);
 
+        // modelAstronaut (drugi atronaut zarotiran ka prvom astronautu)
         glm::mat4 modelMatrixAstronaut2 = glm::mat4(1.0f);
         modelMatrixAstronaut2 = glm::translate(modelMatrixAstronaut2, glm::vec3(34.9f, 12.7f, -14.0f));
-        modelMatrixAstronaut2 = glm::scale(modelMatrixAstronaut2, glm::vec3(0.15f));
         modelMatrixAstronaut2 = glm::rotate(modelMatrixAstronaut2, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrixAstronaut2 = glm::scale(modelMatrixAstronaut2, glm::vec3(0.15f));
         ourShader.setMat4("model", modelMatrixAstronaut2);
         modelAstronaut.Draw(ourShader);
         //------------------------------------ RENDEROVANJE MODELA  ------------------------------------
-
 
 
         //------------------------------------ SKYBOX ------------------------------------
@@ -492,8 +585,6 @@ int main() {
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
         //------------------------------------ SKYBOX ------------------------------------
-
-
 
 
         if (programState->ImGuiEnabled)
@@ -513,36 +604,34 @@ int main() {
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glDeleteVertexArrays(1, &skyboxVAO);
-    glDeleteVertexArrays(1, &skyboxVBO);
+    glDeleteBuffers(1, &skyboxVBO);
     glDeleteVertexArrays(1, &outsideTransparentVerticesVAO);
-    glDeleteVertexArrays(1, &outsideTransparentVerticesVBO);
+    glDeleteBuffers(1, &outsideTransparentVerticesVBO);
     glDeleteVertexArrays(1, &transparentVAO);
-    glDeleteVertexArrays(1, &transparentVBO);
+    glDeleteBuffers(1, &transparentVBO);
+    glDeleteVertexArrays(1, &faceCullingBoxVAO);
+    glDeleteBuffers(1, &faceCullingBoxVBO);
     glfwTerminate();
     return 0;
 }
 
-unsigned int loadCubemap(vector<std::string> faces)
-{
+unsigned int loadCubemap(vector<std::string> faces) {
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     int width, height, nrComponents;
-    for (unsigned int i = 0; i < faces.size(); i++)
-    {
+    for (unsigned int i = 0; i < faces.size(); i++) {
         unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrComponents, 0);
-        if (data)
-        {
+        if (data) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
-        }
-        else
-        {
+        } else {
             std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
             stbi_image_free(data);
         }
     }
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -554,16 +643,16 @@ unsigned int loadCubemap(vector<std::string> faces)
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)   // ESC => terminate
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)   // ESC => terminate
         glfwSetWindowShouldClose(window, true);
 
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)                    // W => Pomeri se napred
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)                    // W => Pomeri se napred
         programState->camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)                    // S => Pomeri se nazad
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)                    // S => Pomeri se nazad
         programState->camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)                    // A => Pomeri se levo
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)                    // A => Pomeri se levo
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)                    // D => Pomeri se desno
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)                    // D => Pomeri se desno
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
@@ -595,7 +684,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
     yoffset *= sensitivity;
 
     // Ako smes da pomeras scenu misem onda update scenu (npr. ako je GUI ukljucen onda ne treba vrsiti update scene (kamere))
-    if(programState->CameraMouseMovementUpdateEnabled)
+    if (programState->CameraMouseMovementUpdateEnabled)
         programState->camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
@@ -618,6 +707,8 @@ void DrawImGui(ProgramState *programState) {
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
         ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
         ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+
+        ImGui::DragFloat("Change mouse speed", &programState->camera.speedCoef, 0.05, 1.0, 5.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
@@ -657,8 +748,7 @@ unsigned int loadTexture(char const * path) {
 
     int width, height, nrComponents;
     unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
+    if (data) {
         GLenum format;
         if (nrComponents == 1)
             format = GL_RED;
@@ -671,15 +761,13 @@ unsigned int loadTexture(char const * path) {
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         stbi_image_free(data);
-    }
-    else
-    {
+    } else {
         std::cout << "Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }
