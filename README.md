@@ -7,7 +7,7 @@ Projekat napravio: Filip Jovanovic 336/2018
   - [x] 1-8 nedelje
   - [x] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending) (Maketa rakete u kutiji - blend)
   - [x] [Face culling](https://learnopengl.com/Advanced-OpenGL/Face-culling) (Maketa astronauta u kutiji)
-  - [ ] [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
+  - [x] [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
 - Oblasti grupe A:
   - [ ] [Framebuffers](https://learnopengl.com/Advanced-OpenGL/Framebuffers)
   - [x] [Cubemaps](https://learnopengl.com/Advanced-OpenGL/Cubemaps)
