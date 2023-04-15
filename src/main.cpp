@@ -53,6 +53,10 @@ float fov   =  45.0f;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+// blinn-phong
+bool blinn = false;
+bool blinnKeyPressed = false;
+
 struct PointLight {
     glm::vec3 position;
     glm::vec3 ambient;
@@ -128,7 +132,7 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Universe", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -174,9 +178,6 @@ int main() {
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);           // Odseci prednju stranu
-    glFrontFace(GL_CW);
 
     // build and compile shaders
     // -------------------------
@@ -184,6 +185,7 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader blendingShader("resources/shaders/blending.vs", "resources/shaders/blending.fs");
     Shader faceCullingShader("resources/shaders/face_culling.vs", "resources/shaders/face_culling.fs");
+    Shader blinnPhongShader("resources/shaders/blinn-phong.vs", "resources/shaders/blinn-phong.fs");
 
     // load models
     // -----------
@@ -344,7 +346,7 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    unsigned int outsideTransparentTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str());
+    unsigned int outsideTransparentTexture = loadTexture(FileSystem::getPath("resources/textures/wood_texture.png").c_str());
     unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/window_60percent.png").c_str());
 
     blendingShader.use();
@@ -354,48 +356,47 @@ int main() {
 
     // ---------------------------------- FACE CULLING ----------------------------------
     float faceCullingBoxVertices[] = {
-            // back face
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-            0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-            // front face
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
-            // left face
-            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-            // right face
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-            0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-            0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-            // bottom face
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-            0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-            // top face
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f  // top-left
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
     // faceCullingBox setup
@@ -411,21 +412,64 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    unsigned int faceCullingTexture = loadTexture(FileSystem::getPath("resources/textures/container.jpg").c_str());
+    unsigned int faceCullingTexture = loadTexture(FileSystem::getPath("resources/textures/wood_texture.png").c_str());
 
     faceCullingShader.use();
     faceCullingShader.setInt("texture1", 0);
     // ---------------------------------- FACE CULLING ----------------------------------
 
 
+    // -------------------------- TEXTURA ISPOD KUTIJA (MAKETA) --------------------------
+    // Nas box (2D)                     Textura (1x1)
+    // (-7,-4)       (-3, -4)    (0, 1)         (1, 1)
+    //   |--------------|          |--------------|
+    //   |              |          |              |
+    //   |              |          |              |
+    //   |--------------|          |--------------|
+    // (-7, 0)      (-3, 0)      (0, 0)         (1, 0)
+    // Crtanje trouglova: [gornji-desni, donji-desni, gornji-levi], [donji-desni, donji-levi, gornji-levi]
+    // Mapira se u odgovarajuce koordinate na teksturi
+    float metalTextureVertices[] = {
+            // Koordinate                        // Normale                    // Koordinate teksture
+            -3.0f, -0.55f,  -4.0f,  0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
+            -3.0f, -0.55f,  0.0f,  0.0f, 1.0f, 0.0f,   1.0f,  0.0f,
+            -7.0f, -0.55f, -4.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+            -3.0f, -0.55f,  0.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+            -7.0f, -0.55f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+            -7.0f, -0.55f, -4.0f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f
+    };
+
+    // metalTextureVertices setup
+    unsigned int metalTextureVerticesVAO, metalTextureVerticesVBO;
+    glGenVertexArrays(1, &metalTextureVerticesVAO);
+    glGenBuffers(1, &metalTextureVerticesVBO);
+    glBindVertexArray(metalTextureVerticesVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, metalTextureVerticesVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(metalTextureVertices), metalTextureVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glBindVertexArray(0);
+
+    unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/metal_texture.png").c_str());
+
+    blinnPhongShader.use();
+    blinnPhongShader.setInt("texture1", 0);
+    // -------------------------- TEXTURA ISPOD KUTIJA (MAKETA) --------------------------
+
+
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, -10.0);    // Postavi na z=-10 da bude svetlije
+    pointLight.position = glm::vec3(-26.0f, 22.0f, 16.0f);
     pointLight.ambient = glm::vec3(0.7, 0.7, 0.7);
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
+    pointLight.constant = 0.0f;
+    pointLight.linear = 0.05f;
 //    pointLight.quadratic = 0.032f;    // Slabljenje svetlosti (kako se udaljava od pozicije tako slabi)
     pointLight.quadratic = 0.0f;
 
@@ -450,11 +494,26 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        blinnPhongShader.use();
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = programState->camera.GetViewMatrix();
+        blinnPhongShader.setMat4("projection", projection);
+        blinnPhongShader.setMat4("view", view);
+        // set light uniforms
+        blinnPhongShader.setVec3("viewPos", programState->camera.Position);
+        blinnPhongShader.setVec3("lightPos", pointLight.position);
+        blinnPhongShader.setInt("blinn", blinn);
+
+        glBindVertexArray(metalTextureVerticesVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
         blendingShader.use();
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
+        projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = programState->camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
         blendingShader.setMat4("projection", projection);
         blendingShader.setMat4("view", view);
@@ -494,7 +553,7 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, faceCullingTexture);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -5.0f));
+        model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -3.0f));
         faceCullingShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glDisable(GL_CULL_FACE);    // Da ne bi uticalo na druge objekte na sceni
@@ -502,7 +561,7 @@ int main() {
         // modelAstronaut (Velicina svakako nije proporcionalna zemlji i marsu)
         glm::mat4 modelMatrixAstronautMini= glm::mat4(1.0f);
 //        modelMatrixRocketMini = glm::translate(modelMatrixRocketMini, glm::vec3(-5.0f, -0.3f, -1.0f));    // Staticki model
-        modelMatrixAstronautMini = glm::translate(modelMatrixAstronautMini, glm::vec3(-5.0f, -0.1f * cos(currentFrame) - 0.3f, -5.0f));
+        modelMatrixAstronautMini = glm::translate(modelMatrixAstronautMini, glm::vec3(-5.0f, -0.1f * cos(currentFrame) -0.3f, -3.0f));
         modelMatrixAstronautMini = glm::rotate(modelMatrixAstronautMini, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelMatrixAstronautMini = glm::scale(modelMatrixAstronautMini, glm::vec3(0.15f));
         ourShader.setMat4("model", modelMatrixAstronautMini);
@@ -528,6 +587,13 @@ int main() {
 
 
         //------------------------------------ RENDEROVANJE MODELA  ------------------------------------
+        // modelSun
+        glm::mat4 modelMatrixSun = glm::mat4(1.0f);
+        modelMatrixSun = glm::translate(modelMatrixSun, glm::vec3(-35.0f, 15.0f, 10.0f));
+        modelMatrixSun = glm::scale(modelMatrixSun, glm::vec3(9.5f));
+        ourShader.setMat4("model", modelMatrixSun);
+        modelSun.Draw(ourShader);
+
         // modelEarth
         glm::mat4 modelMatrixEarth = glm::mat4(1.0f);
         modelMatrixEarth = glm::translate(modelMatrixEarth, glm::vec3(0.0f, -5.0f, -25.0f));
@@ -611,6 +677,8 @@ int main() {
     glDeleteBuffers(1, &transparentVBO);
     glDeleteVertexArrays(1, &faceCullingBoxVAO);
     glDeleteBuffers(1, &faceCullingBoxVBO);
+    glDeleteVertexArrays(1, &metalTextureVerticesVAO);
+    glDeleteBuffers(1, &metalTextureVerticesVBO);
     glfwTerminate();
     return 0;
 }
@@ -654,6 +722,13 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)                    // D => Pomeri se desno
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed) { // Promena izmedju obicnog Phong-ovog modela i Blinn-Phong-ovog modela
+        blinn = !blinn;
+        blinnKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
+        blinnKeyPressed = false;
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -708,7 +783,7 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
         ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
-        ImGui::DragFloat("Change mouse speed", &programState->camera.speedCoef, 0.05, 1.0, 5.0);
+        ImGui::DragFloat("Change velocity", &programState->camera.speedCoef, 0.05, 1.0, 5.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);

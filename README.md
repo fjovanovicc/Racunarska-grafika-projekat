@@ -23,10 +23,10 @@ Projekat napravio: Filip Jovanovic 336/2018
 - Ako sadrzi obavezne oblasti(1-8 nedelje, Blending, Face culling, Advanced lighting) max broj poena koji je moguce osvojiti je 15
 - Ako sadrzi obavezne oblasti + 1 oblast iz grupe A max broj poena koji je moguce osvojiti je 25
 - Ako sadrzi obavezne oblasti + 1 oblast iz grupe A + 1 oblast iz grupe B max broj poena koji je moguce osvojiti je 35
-- Ako sadrzi obavezne oblasti + 1 oblast iz grupe A + 1 oblast iz grupe B max broj poena koji je moguce osvojiti je 40 (5 je bonus)
+- Ako sadrzi obavezne oblasti + 1 oblast iz grupe A + 2 oblasti iz grupe B max broj poena koji je moguce osvojiti je 40 (5 je bonus)
 
 ## Napomene za studente prilikom kreiranja projekta
-- Svo osvetljenje na sceni treba da se racuna po Blin-Fonogovom modelu [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
+- Svo osvetljenje na sceni treba da se racuna po Blin-Fongovom modelu [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
 - Dovoljno je da projekat ima jedan tip [Blendinga](https://learnopengl.com/Advanced-OpenGL/Blending)(Discard ili blend)
 - Na Github-u mora postojati istorija commit-ova da bi bio pregledan
 - U projektu nije dozvoljeno koriscenje .obj modela i tekstura iz glavnog [repozitorijuma](https://github.com/matf-racunarska-grafika/LearnOpenGL)
