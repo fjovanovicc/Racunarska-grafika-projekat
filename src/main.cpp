@@ -159,7 +159,7 @@ int main() {
     stbi_set_flip_vertically_on_load(true);
 
     programState = new ProgramState;
-//    programState->LoadFromFile("resources/program_state.txt");
+//    programState->LoadFromFile("resources/program_state.txt");        // Ne citam iz fajla da bi bila ista scena prilikom svakog pokretanja
     if(programState->ImGuiEnabled) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
@@ -178,6 +178,9 @@ int main() {
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);           // Odseci prednju stranu (za blending)
+    glFrontFace(GL_CW);
 
     // build and compile shaders
     // -------------------------
@@ -185,7 +188,7 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader blendingShader("resources/shaders/blending.vs", "resources/shaders/blending.fs");
     Shader faceCullingShader("resources/shaders/face_culling.vs", "resources/shaders/face_culling.fs");
-    Shader blinnPhongShader("resources/shaders/blinn-phong.vs", "resources/shaders/blinn-phong.fs");
+    Shader blinnPhongTextureShader("resources/shaders/blinn-phong_texture.vs", "resources/shaders/blinn-phong_texture.fs");
 
     // load models
     // -----------
@@ -429,6 +432,7 @@ int main() {
     // (-7, 0)      (-3, 0)      (0, 0)         (1, 0)
     // Crtanje trouglova: [gornji-desni, donji-desni, gornji-levi], [donji-desni, donji-levi, gornji-levi]
     // Mapira se u odgovarajuce koordinate na teksturi
+    // Podizemo malo teksturu da se ne bi preklapale metalna tekstura i donji delovi kocke
     float metalTextureVertices[] = {
             // Koordinate                        // Normale                    // Koordinate teksture
             -3.0f, -0.55f,  -4.0f,  0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
@@ -457,8 +461,8 @@ int main() {
 
     unsigned int floorTexture = loadTexture(FileSystem::getPath("resources/textures/metal_texture.png").c_str());
 
-    blinnPhongShader.use();
-    blinnPhongShader.setInt("texture1", 0);
+    blinnPhongTextureShader.use();
+    blinnPhongTextureShader.setInt("texture1", 0);
     // -------------------------- TEXTURA ISPOD KUTIJA (MAKETA) --------------------------
 
 
@@ -468,11 +472,9 @@ int main() {
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
-    pointLight.constant = 0.0f;
-    pointLight.linear = 0.05f;
-//    pointLight.quadratic = 0.032f;    // Slabljenje svetlosti (kako se udaljava od pozicije tako slabi)
-    pointLight.quadratic = 0.0f;
-
+    pointLight.constant = 1.0f;
+    pointLight.linear = 0.014f;
+    pointLight.quadratic = 0.0007f;     // Slabljenje svetlosti (tj. udaljeniji modeli ce biti manje osvetljeni)
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -494,20 +496,22 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        blinnPhongShader.use();
+        // --------------------------------------- METALNA TEKSTURA ISPOD KUTIJA ---------------------------------------
+        blinnPhongTextureShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
-        blinnPhongShader.setMat4("projection", projection);
-        blinnPhongShader.setMat4("view", view);
+        blinnPhongTextureShader.setMat4("projection", projection);
+        blinnPhongTextureShader.setMat4("view", view);
         // set light uniforms
-        blinnPhongShader.setVec3("viewPos", programState->camera.Position);
-        blinnPhongShader.setVec3("lightPos", pointLight.position);
-        blinnPhongShader.setInt("blinn", blinn);
+        blinnPhongTextureShader.setVec3("viewPos", programState->camera.Position);
+        blinnPhongTextureShader.setVec3("lightPos", pointLight.position);
+        blinnPhongTextureShader.setInt("blinn", blinn);
 
         glBindVertexArray(metalTextureVerticesVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
+        // --------------------------------------- METALNA TEKSTURA ISPOD KUTIJA ---------------------------------------
 
 
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
@@ -545,7 +549,7 @@ int main() {
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
 
 
-        // ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
+//         ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         glFrontFace(GL_CW);
@@ -569,21 +573,34 @@ int main() {
         // ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
 
 
-        // ourShader setup (koriscen za sve modele zemlje, marsa, atronauta i rakete)
+        // --------------------------------------- SHADER ZA MODELE ---------------------------------------
         ourShader.use();
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+
+        // Direkcionalno svetlo
+        ourShader.setVec3("dirLight.direction", -30.0f, -50.0f, 0.0f);
+        ourShader.setVec3("dirLight.ambient", 0.06, 0.06, 0.06);
+        ourShader.setVec3("dirLight.diffuse",  0.6f,0.2f,0.2);
+        ourShader.setVec3("dirLight.specular", 0.1, 0.1, 0.1);
+
+
+        // Izvor svetlosti Sunca
+        ourShader.setVec3("pointLight[0].position", pointLight.position);
+        ourShader.setVec3("pointLight[0].ambient", pointLight.ambient);
+        ourShader.setVec3("pointLight[0].diffuse", pointLight.diffuse);
+        ourShader.setVec3("pointLight[0].specular", pointLight.specular);
+        ourShader.setFloat("pointLight[0].constant", pointLight.constant);
+        ourShader.setFloat("pointLight[0].linear", pointLight.linear);
+        ourShader.setFloat("pointLight[0].quadratic", pointLight.quadratic);
+
         ourShader.setVec3("viewPosition", programState->camera.Position);
         ourShader.setFloat("material.shininess", 32.0f);
-        projection = glm::perspective(glm::radians(programState->camera.Zoom),(float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        // view/projection transformations
+        projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+        // --------------------------------------- SHADER ZA MODELE ---------------------------------------
 
 
         //------------------------------------ RENDEROVANJE MODELA  ------------------------------------
