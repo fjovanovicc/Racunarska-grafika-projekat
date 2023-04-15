@@ -2,6 +2,22 @@
 Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learnopengl.com/) specifikaciju.  
 Projekat napravio: Filip Jovanovic 336/2018
 
+## Interakcija
+ - `W`, `A`, `S`, `D` - Kretanje scenom redom napred, levo, nazad, desno
+ - `F1` - Meni (GUI)
+ 
+## Resursi
+ - Neki od sajtova za preuzimanje modela: [Turbosquid](https://www.turbosquid.com/Search/3D-Models), [Sketchfab](https://sketchfab.com/3d-models), [Artec3D](https://www.artec3d.com/3d-models), [CGtrader](https://www.cgtrader.com/3d-models)
+ - Modeli
+   - [Astronaut](https://sketchfab.com/3d-models/astronaut-obj-sva-sva-23512-0c780fc92a1c420bb2286cc19a400034) ([`Sketchfab`](https://sketchfab.com/3d-models))
+   - [Raketa](https://www.turbosquid.com/3d-models/3d-toy-rocket-4k-free-1973134) ([`Turbosquid`](https://www.turbosquid.com/Search/3D-Models))
+   - [Mars](https://www.turbosquid.com/3d-models/realistic-mars-photorealistic-2k-3d-1277433) ([`Turbosquid`](https://www.turbosquid.com/Search/3D-Models))
+   - [Zemlja](https://www.turbosquid.com/3d-models/earth-max-free/1016431) ([`Turbosquid`](https://www.turbosquid.com/Search/3D-Models))
+   - [Sunce](https://sketchfab.com/3d-models/the-sun-0d28aa65eb174d948c2716d73e8fd3bd) ([`Sketchfab`](https://sketchfab.com/3d-models))
+ - Teksture:
+   - Skybox (~link~)
+   - Ostale teksture su radjene u [Photoshop-u](https://www.adobe.com/products/photoshop.html)
+
 ## Implementacija oblasti i ocenjivanje
 - Obavezne oblasti:
   - [x] 1-8 nedelje
