@@ -1,10 +1,16 @@
 # Racunarska grafika projekat
 Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learnopengl.com/) specifikaciju.  
-Projekat napravio: Filip Jovanovic 336/2018
+Projekat napravio: Filip Jovanovic 336/2018  
+Na sceni su prikazani modeli Sunca, Meseca i Marsa. 
+Raketa polece sa planete Zemlje (Florida) kako bi spasila 2 astronauta koji su ostali na Marsu. 
+Modeli rakete i astronauta se nalaze u kutijama nad kojim je odradjen efekat [Blending-a](https://learnopengl.com/Advanced-OpenGL/Blending), odnosno [Face culling-a](https://learnopengl.com/Advanced-OpenGL/Face-culling).
 
 ## Interakcija
  - `W`, `A`, `S`, `D` - Kretanje scenom redom napred, levo, nazad, desno
  - `F1` - Meni (GUI)
+ - `F1->HDR` - Aktivacija HDR efekta
+ - `F1->Bloom` - Aktivacija Bloom efekta
+ - `B` - Promena izmedju Fongovog i Blin-Fongovog modela (promena je aktivna samo na metalnoj teksturi ispod kutija tj. maketa)
  
 ## Resursi
  - Neki od sajtova za preuzimanje modela: [Turbosquid](https://www.turbosquid.com/Search/3D-Models), [Sketchfab](https://sketchfab.com/3d-models), [Artec3D](https://www.artec3d.com/3d-models), [CGtrader](https://www.cgtrader.com/3d-models)
@@ -18,10 +24,16 @@ Projekat napravio: Filip Jovanovic 336/2018
    - Skybox (~link~)
    - Ostale teksture su radjene u [Photoshop-u](https://www.adobe.com/products/photoshop.html)
 
+## Neki od problema sa modelima
+ - Ako se model ucitava ali se tekstura ne ucitava, proveriti da li postoji mtl fajl
+ - Proveriti da li se tekstura nalazi ispod koordinata mapiranja `map_Kd ime_teksture.ext`
+ - Proveriti da li su odgovarajuce teksture mapirane na odgovarajuce koordinate
+ - Proveriti putanje do tekstura, relativne putanje su u odnosu na putanju mtl fajla
+
 ## Implementacija oblasti i ocenjivanje
 - Obavezne oblasti:
   - [x] 1-8 nedelje
-  - [x] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending) (Maketa rakete u kutiji - blend)
+  - [x] [Blending](https://learnopengl.com/Advanced-OpenGL/Blending) (Maketa rakete u kutiji)
   - [x] [Face culling](https://learnopengl.com/Advanced-OpenGL/Face-culling) (Maketa astronauta u kutiji)
   - [x] [Advanced lighting](https://learnopengl.com/Advanced-Lighting/Advanced-Lighting)
 - Oblasti grupe A:
@@ -32,7 +44,7 @@ Projekat napravio: Filip Jovanovic 336/2018
 - Oblasti grupe B:
   - [ ] [Point shadows](https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows)
   - [ ] [Normal mapping](https://learnopengl.com/Advanced-Lighting/Normal-Mapping), [Parallax mapping](https://learnopengl.com/Advanced-Lighting/Parallax-Mapping)
-  - [ ] [HDR](https://learnopengl.com/Advanced-Lighting/HDR), [Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
+  - [x] [HDR](https://learnopengl.com/Advanced-Lighting/HDR), [Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
   - [ ] [Deffered Shading](https://learnopengl.com/Advanced-Lighting/Deferred-Shading)
   - [ ] [SSAO](https://learnopengl.com/Advanced-Lighting/SSAO)
 
