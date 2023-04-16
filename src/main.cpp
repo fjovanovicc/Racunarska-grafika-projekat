@@ -32,6 +32,10 @@ unsigned int loadCubemap(vector<std::string> faces);
 
 unsigned int loadTexture(char const * path);
 
+void renderQuad();
+
+void setNightLights(Shader& shader, float currentFrame);
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -57,6 +61,13 @@ float lastFrame = 0.0f;
 bool blinn = false;
 bool blinnKeyPressed = false;
 
+bool spotlightEnabled = true;
+
+// HDR
+bool hdr = true;
+bool hdrKeyPressed = false;
+float exposure = 1.0f;
+
 struct PointLight {
     glm::vec3 position;
     glm::vec3 ambient;
@@ -76,6 +87,11 @@ struct ProgramState {
     glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 0.2f;
     PointLight pointLight;
+    bool hdr = false;
+    bool bloom = false;
+    float exposure = 0.2f;
+    float gamma = 2.2f;
+    int kernelEffects = 3;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
@@ -184,11 +200,12 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");     // Shader za modele
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader blendingShader("resources/shaders/blending.vs", "resources/shaders/blending.fs");
     Shader faceCullingShader("resources/shaders/face_culling.vs", "resources/shaders/face_culling.fs");
-    Shader blinnPhongTextureShader("resources/shaders/blinn-phong_texture.vs", "resources/shaders/blinn-phong_texture.fs");
+    Shader blinnPhongTextureShader("resources/shaders/blinn-phong_texture.vs", "resources/shaders/blinn-phong_texture.fs"); // Samo za teksturu metalne podgloge
+    Shader screenShader("resources/shaders/screen_shader.vs", "resources/shaders/screen_shader.fs");  // Shader za ekran
 
     // load models
     // -----------
@@ -207,7 +224,6 @@ int main() {
     // ------------------------------------ SKYBOX ------------------------------------
     // Skybox ("kutija" 1x1x1)
     float skyboxVertices[] = {
-        // positions
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
         1.0f, -1.0f, -1.0f,
@@ -357,6 +373,36 @@ int main() {
     // ------------------------------------ BLENDING ------------------------------------
 
 
+    // ---------------------------------- HDR & BLOOM ----------------------------------
+    unsigned int hdrFBO;
+    glGenFramebuffers(1, &hdrFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+
+    unsigned int colorBuffers[2];
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; ++i) {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cerr << "Framebuffer is not complete!" << "\n";
+    // ---------------------------------- HDR & BLOOM ----------------------------------
+
+
     // ---------------------------------- FACE CULLING ----------------------------------
     float faceCullingBoxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -495,14 +541,26 @@ int main() {
 
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ourShader.use();
+        ourShader.setBool("blinn", blinn);
+        ourShader.setVec3("viewPosition", programState->camera.Position);
+
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = programState->camera.GetViewMatrix();
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
 
         // --------------------------------------- METALNA TEKSTURA ISPOD KUTIJA ---------------------------------------
         blinnPhongTextureShader.use();
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
+        projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = programState->camera.GetViewMatrix();
         blinnPhongTextureShader.setMat4("projection", projection);
         blinnPhongTextureShader.setMat4("view", view);
-        // set light uniforms
+
         blinnPhongTextureShader.setVec3("viewPos", programState->camera.Position);
         blinnPhongTextureShader.setVec3("lightPos", pointLight.position);
         blinnPhongTextureShader.setInt("blinn", blinn);
@@ -549,7 +607,7 @@ int main() {
         // ---------------------------- BLENDING (MAKETA RAKETE) ----------------------------
 
 
-//         ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
+        // ---------------------------- FACE CULLING (MAKETA ASTRONAUTA) ----------------------------
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         glFrontFace(GL_CW);
@@ -670,6 +728,23 @@ int main() {
         //------------------------------------ SKYBOX ------------------------------------
 
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Renderovanje quad-plane-a
+        screenShader.use();
+        screenShader.setInt("bloom", programState->bloom);
+        screenShader.setInt("effect", programState->kernelEffects);
+        screenShader.setInt("hdr", programState->hdr);
+        screenShader.setFloat("exposure", programState->exposure);
+        screenShader.setFloat("gamma", programState->gamma);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+
+        renderQuad();
+
+
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
 
@@ -739,12 +814,21 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)                    // D => Pomeri se desno
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed) { // Promena izmedju obicnog Phong-ovog modela i Blinn-Phong-ovog modela
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed) { // Promena izmedju obicnog Phong-ovog modela i Blinn-Phong-ovog modela (Samo za metalnu teksturu)
         blinn = !blinn;
         blinnKeyPressed = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {   // Kad pustis vrati na prethodni model osvetljenja
         blinnKeyPressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        if (exposure > 0.0f)
+            exposure -= 0.1f;
+        else
+            exposure = 0.0f;
+    } else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        exposure += 0.1f;
     }
 }
 
@@ -793,12 +877,16 @@ void DrawImGui(ProgramState *programState) {
 
     {
         static float f = 0.0f;
-        ImGui::Begin("Hello window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        ImGui::Begin("Settings");
+        ImGui::Text("Scene settings");
+
+        ImGui::Text("Hdr/Bloom");
+        ImGui::Checkbox("HDR", &programState->hdr);
+        if (programState->hdr) {
+            ImGui::Checkbox("Bloom", &programState->bloom);
+            ImGui::DragFloat("Exposure", &programState->exposure, 0.05f, 0.0f, 5.0f);
+            ImGui::DragFloat("Gamma factor", &programState->gamma, 0.05f, 0.0f, 4.0f);
+        }
 
         ImGui::DragFloat("Change velocity", &programState->camera.speedCoef, 0.05, 1.0, 5.0);
 
@@ -865,4 +953,31 @@ unsigned int loadTexture(char const * path) {
     }
 
     return textureID;
+}
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad() {
+    if (quadVAO == 0) {
+        float quadVertices[] = {
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
