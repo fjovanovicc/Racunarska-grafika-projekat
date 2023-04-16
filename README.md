@@ -3,7 +3,8 @@ Projekat napravljen na kursu Racunarska grafika koristeci [OpenGL](https://learn
 Projekat napravio: Filip Jovanovic 336/2018  
 Na sceni su prikazani modeli Sunca, Meseca i Marsa. 
 Raketa polece sa planete Zemlje (Florida) kako bi spasila 2 astronauta koji su ostali na Marsu. 
-Modeli rakete i astronauta se nalaze u kutijama nad kojim je odradjen efekat [Blending-a](https://learnopengl.com/Advanced-OpenGL/Blending), odnosno [Face culling-a](https://learnopengl.com/Advanced-OpenGL/Face-culling).
+Modeli rakete i astronauta se nalaze u kutijama nad kojima je odradjen efekat [Blending-a](https://learnopengl.com/Advanced-OpenGL/Blending), odnosno efekat [Face culling-a](https://learnopengl.com/Advanced-OpenGL/Face-culling).  
+Link do videa demonstracije projekta: [Video](https://www.youtube.com/watch?v=c-qocEGqFfE&ab_channel=FilipJovanovic)
 
 ## Interakcija
  - `W`, `A`, `S`, `D` - Kretanje scenom redom napred, levo, nazad, desno
